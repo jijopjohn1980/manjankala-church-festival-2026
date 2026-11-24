@@ -1,8 +1,51 @@
-      - name: Build APK
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: unzip -o project.zip -d app
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build web app
         run: |
           cd app/manjankal-church-festival-accounts-2026
+          rm -f capacitor.config.ts
           npm install --legacy-peer-deps
           npm run build
           npm install @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7 --legacy-peer-deps
           npx cap add android
           npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd app/manjankal-church-festival-accounts-2026/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: church-festival-apk
+          path: app/manjankal-church-festival-accounts-2026/android/app/build/outputs/apk/debug/*.apk
